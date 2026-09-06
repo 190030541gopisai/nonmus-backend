@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: nonmus
+  datasource:
+    url: jdbc:postgresql://localhost:5432/nonmus
+    username: postgres
+    password: ${DB_PASSWORD:root}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      data-source-properties:
+        serverTimezone: Asia/Kolkata
