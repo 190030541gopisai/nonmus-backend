@@ -1,0 +1,6 @@
+# Ignore sensitive secret files
+.env
+.env.*
+.env.local
+.env.production
+!.env.example
