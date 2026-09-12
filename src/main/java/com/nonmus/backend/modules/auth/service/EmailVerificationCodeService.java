@@ -4,12 +4,14 @@ import com.nonmus.backend.modules.auth.dto.internal.VerificationCodeState;
 import com.nonmus.backend.modules.auth.dto.internal.VerifyResult;
 import com.nonmus.backend.modules.auth.repository.EmailVerificationCodeRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
 import java.time.Duration;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class EmailVerificationCodeService {
@@ -25,6 +27,8 @@ public class EmailVerificationCodeService {
     private Duration verificationCodeTtl;
 
     public VerificationCodeState createVerificationCode(String email) {
+        log.debug("Creating verification code for email: {}", email);
+
         String verificationCode = generateCode();
 
         VerificationCodeState state = VerificationCodeState.builder()
@@ -34,9 +38,8 @@ public class EmailVerificationCodeService {
                 .expiryInSeconds(verificationCodeTtl.toSeconds())
                 .build();
 
-        emailVerificationCodeRepository.save(
-                email,
-                state);
+        emailVerificationCodeRepository.save(email, state);
+        log.info("Verification code created and saved for email: {}", email);
 
         return state;
     }

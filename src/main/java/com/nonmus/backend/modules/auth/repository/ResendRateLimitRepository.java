@@ -1,6 +1,7 @@
 package com.nonmus.backend.modules.auth.repository;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Repository;
@@ -8,6 +9,7 @@ import org.springframework.stereotype.Repository;
 import java.time.Duration;
 import java.util.List;
 
+@Slf4j
 @Repository
 @RequiredArgsConstructor
 public class ResendRateLimitRepository {
@@ -64,6 +66,8 @@ public class ResendRateLimitRepository {
             Duration cooldown,
             Duration attemptsTtl
     ) {
+        log.debug("Executing Redis rate limit script for email: {}", email);
+
         Long result = redisTemplate.execute(
                 RECORD_RESEND_SCRIPT,
                 List.of(
@@ -76,9 +80,11 @@ public class ResendRateLimitRepository {
         );
 
         if (result == null) {
+            log.error("Redis script execution returned null for email: {}", email);
             throw new IllegalStateException("Failed to record resend attempt.");
         }
 
+        log.debug("Redis rate limit script returned {} for email: {}", result, email);
         return result;
     }
 

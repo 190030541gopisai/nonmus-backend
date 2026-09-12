@@ -3,6 +3,7 @@ package com.nonmus.backend.exceptions;
 import com.nonmus.backend.modules.auth.dto.internal.ApiFieldError;
 import com.nonmus.backend.modules.auth.dto.response.ApiErrorResponse;
 import jakarta.validation.ConstraintViolationException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,12 +14,14 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.time.Instant;
 import java.util.List;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiErrorResponse> handleMethodArgumentNotValidException(
             MethodArgumentNotValidException exception) {
+        log.warn("Validation error on request: {}", exception.getMessage());
 
         List<ApiFieldError> errors = exception.getBindingResult()
                 .getFieldErrors()
@@ -45,6 +48,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ApiErrorResponse> handleConstraintViolationException(
             ConstraintViolationException exception) {
+        log.warn("Constraint violation: {}", exception.getMessage());
 
         List<ApiFieldError> errors = exception.getConstraintViolations()
                 .stream()
@@ -70,6 +74,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(UserAlreadyExistsException.class)
     public ResponseEntity<ApiErrorResponse> handleUserAlreadyExistsException(
             UserAlreadyExistsException exception) {
+        log.warn("User already exists conflict: {}", exception.getMessage());
 
         ApiErrorResponse response = ApiErrorResponse.builder()
                 .status(HttpStatus.CONFLICT.value())
@@ -86,6 +91,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ResendCooldownActiveException.class)
     public ResponseEntity<ApiErrorResponse> handleResendCooldownActiveException(
             ResendCooldownActiveException exception) {
+        log.warn("Resend cooldown active: {}, retryAfter: {}s", exception.getMessage(), exception.getRetryAfterSeconds());
 
         ApiErrorResponse response = ApiErrorResponse.builder()
                 .status(HttpStatus.TOO_MANY_REQUESTS.value())
@@ -104,6 +110,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ResendAttemptsExceededException.class)
     public ResponseEntity<ApiErrorResponse> handleResendAttemptsExceededException(
             ResendAttemptsExceededException exception) {
+        log.warn("Resend attempts exceeded: {}", exception.getMessage());
 
         ApiErrorResponse response = ApiErrorResponse.builder()
                 .status(HttpStatus.TOO_MANY_REQUESTS.value())
@@ -120,6 +127,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiErrorResponse> handleInternalServerError(
             Exception exception) {
+        log.error("Unhandled exception caught in global handler", exception);
 
         ApiErrorResponse response = ApiErrorResponse.builder()
                 .status(HttpStatus.INTERNAL_SERVER_ERROR.value())

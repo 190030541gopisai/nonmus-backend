@@ -8,6 +8,7 @@ import com.nonmus.backend.modules.auth.dto.response.VerifyResponse;
 import com.nonmus.backend.modules.auth.service.AuthEmailService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
@@ -23,6 +25,8 @@ public class AuthEmailController {
 
     @PostMapping("/email")
     public ResponseEntity<VerificationCodeResponse> sendVerificationCode(@Valid @RequestBody SendEmailRequest request) {
+        log.info("Received request to send verification code to email: {}", request.getEmail());
+
         VerificationCodeResult verificationCodeResult = authEmailService.sendVerificationCode(request.getEmail());
 
         VerificationCodeResponse verificationCodeResponse = VerificationCodeResponse.builder()
@@ -30,11 +34,13 @@ public class AuthEmailController {
                 .resendInSeconds(verificationCodeResult.getResendInSeconds())
                 .build();
 
+        log.info("Verification code sent successfully to email: {}", request.getEmail());
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(verificationCodeResponse);
     }
 
     @PostMapping("/email/verify")
     public VerifyResponse verifyEmail(@RequestBody VerifyEmailRequest request) {
+        log.info("Received request to verify email: {}", request.getEmail());
         return null;
     }
 }
