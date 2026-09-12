@@ -71,6 +71,40 @@ public class GlobalExceptionHandler {
                 .body(response);
     }
 
+    @ExceptionHandler(InvalidVerificationCodeException.class)
+    public ResponseEntity<ApiErrorResponse> handleInvalidVerificationCodeException(
+            InvalidVerificationCodeException exception) {
+        log.warn("Invalid verification code: {}", exception.getMessage());
+
+        ApiErrorResponse response = ApiErrorResponse.builder()
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error("INVALID_VERIFICATION_CODE")
+                .message(exception.getMessage())
+                .timestamp(Instant.now())
+                .build();
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(response);
+    }
+
+    @ExceptionHandler(VerifyAttemptsExceededException.class)
+    public ResponseEntity<ApiErrorResponse> handleVerifyAttemptsExceededException(
+            VerifyAttemptsExceededException exception) {
+        log.warn("Verification attempts exceeded: {}", exception.getMessage());
+
+        ApiErrorResponse response = ApiErrorResponse.builder()
+                .status(HttpStatus.TOO_MANY_REQUESTS.value())
+                .error("VERIFY_ATTEMPTS_EXCEEDED")
+                .message(exception.getMessage())
+                .timestamp(Instant.now())
+                .build();
+
+        return ResponseEntity
+                .status(HttpStatus.TOO_MANY_REQUESTS)
+                .body(response);
+    }
+
     @ExceptionHandler(UserAlreadyExistsException.class)
     public ResponseEntity<ApiErrorResponse> handleUserAlreadyExistsException(
             UserAlreadyExistsException exception) {

@@ -1,6 +1,7 @@
 package com.nonmus.backend.modules.auth.service;
 
 import com.nonmus.backend.exceptions.UserAlreadyExistsException;
+import com.nonmus.backend.modules.auth.dto.internal.EmailVerificationToken;
 import com.nonmus.backend.modules.auth.dto.internal.ResendState;
 import com.nonmus.backend.modules.auth.dto.internal.VerificationCodeResult;
 import com.nonmus.backend.modules.auth.dto.internal.VerificationCodeState;
@@ -19,8 +20,10 @@ public class AuthEmailService {
     private final ResendRateLimitService resendRateLimitService;
     private final UserService userService;
     private final VerificationCodeEventPublisher eventPublisher;
+    private final EmailVerificationTokenService emailVerificationTokenService;
 
-    public VerificationCodeResult sendVerificationCode(String email) {
+    public VerificationCodeResult sendVerificationCode(String originalEmail) {
+        String email = originalEmail.toLowerCase();
         log.info("Processing verification code request for email: {}", email);
 
         if (userService.emailExists(email)) {
@@ -45,7 +48,23 @@ public class AuthEmailService {
                 .build();
     }
 
-    public VerifyResult verify(String email, String code) {
-        return null;
+    public VerifyResult verify(String originalEmail, String code) {
+        String email = originalEmail.toLowerCase();
+        log.info("Processing verification for email: {}", email);
+
+        if (userService.emailExists(email)) {
+            log.warn("User with email already exists: {}", email);
+            throw new UserAlreadyExistsException("A user with this email already exists");
+        }
+
+        emailVerificationCodeService.verify(email, code);
+
+        EmailVerificationToken token = emailVerificationTokenService.createToken(email);
+        log.info("Email verification successful and token generated for email: {}", email);
+
+        return VerifyResult.builder()
+                .verified(true)
+                .verificationToken(token.getToken())
+                .build();
     }
 }

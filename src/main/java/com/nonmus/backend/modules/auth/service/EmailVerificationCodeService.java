@@ -1,7 +1,8 @@
 package com.nonmus.backend.modules.auth.service;
 
+import com.nonmus.backend.exceptions.InvalidVerificationCodeException;
+import com.nonmus.backend.exceptions.VerifyAttemptsExceededException;
 import com.nonmus.backend.modules.auth.dto.internal.VerificationCodeState;
-import com.nonmus.backend.modules.auth.dto.internal.VerifyResult;
 import com.nonmus.backend.modules.auth.repository.EmailVerificationCodeRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -44,8 +45,28 @@ public class EmailVerificationCodeService {
         return state;
     }
 
-    public VerifyResult verify(String email, String code) {
-        return null;
+    public void verify(String email, String code) {
+        log.debug("Verifying code for email: {}", email);
+
+        long result = emailVerificationCodeRepository.verifyCode(email, code);
+
+        if (result == EmailVerificationCodeRepository.VERIFY_NOT_FOUND) {
+            log.warn("No verification code found or expired for email: {}", email);
+            throw new InvalidVerificationCodeException("Expired verification code");
+        }
+
+        if (result == EmailVerificationCodeRepository.VERIFY_ATTEMPTS_EXCEEDED) {
+            log.warn("Max verification attempts exceeded for email: {}", email);
+            throw new VerifyAttemptsExceededException("Maximum verification attempts exceeded. Please request a new code.");
+        }
+
+        if (result == EmailVerificationCodeRepository.VERIFY_SUCCESS) {
+            log.info("Verification code matched for email: {}", email);
+            return;
+        }
+
+        log.warn("Verification code mismatch for email: {}. {} attempt(s) remaining.", email, result);
+        throw new InvalidVerificationCodeException("Invalid verification code.");
     }
 
     private String generateCode() {
