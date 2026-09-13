@@ -3,7 +3,9 @@ package com.nonmus.backend.modules.auth.service;
 import com.nonmus.backend.modules.auth.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service
@@ -17,8 +19,14 @@ public class UserService {
         return userRepository.existsByEmail(email);
     }
 
-    public boolean isUsernameAlreadyTaken(String username) {
-        log.debug("Checking if username is taken: {}", username);
-        return userRepository.existsByUsername(username);
+    @Cacheable(value = "usernameAvailability", condition = "#username != null", key = "#username.trim().toLowerCase()", unless = "#result == true")
+    @Transactional(readOnly = true)
+    public boolean isUsernameAvailable(String username) {
+        if (username == null || username.isBlank()) {
+            return false;
+        }
+        String target = username.trim();
+        boolean exists = userRepository.existsByUsernameIgnoreCase(target);
+        return !exists;
     }
 }
