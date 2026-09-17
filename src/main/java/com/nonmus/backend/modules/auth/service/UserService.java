@@ -1,5 +1,6 @@
 package com.nonmus.backend.modules.auth.service;
 
+import com.nonmus.backend.modules.auth.entity.User;
 import com.nonmus.backend.modules.auth.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -11,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class UserService {
+
     private final UserRepository userRepository;
 
     @Transactional(readOnly = true)
@@ -19,7 +21,12 @@ public class UserService {
         return userRepository.existsByEmail(email);
     }
 
-    @Cacheable(value = "usernameAvailability", condition = "#username != null", key = "#username.trim().toLowerCase()", unless = "#result == true")
+    @Transactional
+    public User createUser(User user) {
+        return userRepository.save(user);
+    }
+
+    @Cacheable(value = "usernameAvailability", condition = "#username != null", key = "#username.trim().toLowerCase()")
     @Transactional(readOnly = true)
     public boolean isUsernameAvailable(String username) {
         if (username == null || username.isBlank()) {
