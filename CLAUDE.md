@@ -23,3 +23,17 @@
 - Maintain transaction boundaries with `@Transactional`.
 - Validate all incoming API request payloads with Bean Validation (`@Valid`, Jakarta constraints).
 - Sensitive environment variables are kept in `.env` and never committed or logged.
+
+## Agent skills
+
+### Issue tracker
+
+Issues and specs for this repo live as GitHub issues. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Maps the five canonical triage roles to GitHub labels (`needs-triage`, `ready-for-agent`, etc.). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context domain dictionary and ADRs at repo root. See `docs/agents/domain.md`.
