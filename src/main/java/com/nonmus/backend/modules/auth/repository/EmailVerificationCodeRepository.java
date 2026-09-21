@@ -38,7 +38,6 @@ public class EmailVerificationCodeRepository {
                     local actualCode = tostring(state['code'])
 
                     if usedAttempts >= maxAttempts then
-                        redis.call('DEL', key)
                         return -2
                     end
 
@@ -51,7 +50,6 @@ public class EmailVerificationCodeRepository {
                     state['usedVerifyAttempts'] = usedAttempts
 
                     if usedAttempts >= maxAttempts then
-                        redis.call('DEL', key)
                         return -2
                     end
 
