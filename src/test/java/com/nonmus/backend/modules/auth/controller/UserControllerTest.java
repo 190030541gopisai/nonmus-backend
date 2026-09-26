@@ -3,6 +3,7 @@ package com.nonmus.backend.modules.auth.controller;
 import com.nonmus.backend.exceptions.GlobalExceptionHandler;
 import com.nonmus.backend.modules.auth.service.UserService;
 import com.nonmus.backend.modules.auth.service.RateLimitService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -13,7 +14,9 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
-import static org.mockito.ArgumentMatchers.any;
+import java.time.Duration;
+
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -45,7 +48,10 @@ class UserControllerTest {
 
     @Test
     void isUsernameAvailable_whenRateLimitExceeded_returns429TooManyRequests() throws Exception {
-        when(rateLimitService.tryConsume(any())).thenReturn(false);
+        when(rateLimitService.tryConsume(any(HttpServletRequest.class),
+                anyString(),
+                anyLong(),
+                any(Duration.class))).thenReturn(false);
 
         mockMvc.perform(get("/api/v1/users/username/available")
                         .param("username", "john_doe")
@@ -56,7 +62,10 @@ class UserControllerTest {
 
     @Test
     void isUsernameAvailable_whenAvailable_returns200WithTrue() throws Exception {
-        when(rateLimitService.tryConsume(any())).thenReturn(true);
+        when(rateLimitService.tryConsume(any(HttpServletRequest.class),
+                anyString(),
+                anyLong(),
+                any(Duration.class))).thenReturn(true);
         when(userService.isUsernameAvailable("john_doe")).thenReturn(true);
 
         mockMvc.perform(get("/api/v1/users/username/available")
@@ -69,7 +78,10 @@ class UserControllerTest {
 
     @Test
     void isUsernameAvailable_whenTaken_returns200WithFalse() throws Exception {
-        when(rateLimitService.tryConsume(any())).thenReturn(true);
+        when(rateLimitService.tryConsume(any(HttpServletRequest.class),
+                anyString(),
+                anyLong(),
+                any(Duration.class))).thenReturn(true);
         when(userService.isUsernameAvailable("existing_user")).thenReturn(false);
 
         mockMvc.perform(get("/api/v1/users/username/available")
@@ -82,7 +94,10 @@ class UserControllerTest {
 
     @Test
     void isUsernameAvailable_whenTakenDifferentCase_returnsFalse() throws Exception {
-        when(rateLimitService.tryConsume(any())).thenReturn(true);
+        when(rateLimitService.tryConsume(any(HttpServletRequest.class),
+                anyString(),
+                anyLong(),
+                any(Duration.class))).thenReturn(true);
         when(userService.isUsernameAvailable("Existing_User")).thenReturn(false);
 
         mockMvc.perform(get("/api/v1/users/username/available")
