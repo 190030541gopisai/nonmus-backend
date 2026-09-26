@@ -1,0 +1,61 @@
+spring:
+  application:
+    name: nonmus
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/nonmus}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:root}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      data-source-properties:
+        serverTimezone: Asia/Kolkata
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+  mail:
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:1025}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: ${MAIL_SMTP_AUTH:false}
+          starttls:
+            enable: ${MAIL_SMTP_STARTTLS:false}
+          connectiontimeout: 3000
+          timeout: 3000
+          writetimeout: 3000
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: ${KAFKA_CONSUMER_GROUP_ID:nonmus-auth-group}
+
+app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+
+verification:
+  code:
+    ttl: ${VERIFICATION_CODE_TTL:10m}
+    max-attempts: ${VERIFICATION_CODE_MAX_ATTEMPTS:5}
+  token:
+    ttl: ${VERIFICATION_TOKEN_TTL:15m}
+    cookie-name: ${VERIFICATION_TOKEN_COOKIE_NAME:email_verification_token}
+    cookie-secure: ${VERIFICATION_TOKEN_COOKIE_SECURE:false}
+
+resend:
+  verification:
+    code:
+      cooldown: ${RESEND_CODE_COOLDOWN:60s}
+      max-attempts: ${RESEND_CODE_MAX_ATTEMPTS:5}
+      attempts-ttl: ${RESEND_CODE_ATTEMPTS_TTL:30m}
