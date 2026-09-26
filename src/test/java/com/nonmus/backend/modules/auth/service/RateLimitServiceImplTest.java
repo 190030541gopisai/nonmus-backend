@@ -1,8 +1,8 @@
 package com.nonmus.backend.modules.auth.service;
 
+import io.github.bucket4j.distributed.BucketProxy;
 import io.github.bucket4j.distributed.proxy.ProxyManager;
 import io.github.bucket4j.distributed.proxy.RemoteBucketBuilder;
-import io.github.bucket4j.distributed.BucketProxy;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -10,7 +10,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
 
-import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -43,10 +43,20 @@ class RateLimitServiceImplTest {
         request.setRemoteAddr("192.168.1.1");
 
         when(proxyManager.builder()).thenReturn(bucketBuilder);
-        when(bucketBuilder.build(any(byte[].class), any(Supplier.class))).thenReturn(bucket);
+        when(bucketBuilder.build(
+                any(byte[].class),
+                any(Supplier.class)
+        )).thenReturn(bucket);
+
         when(bucket.tryConsume(1)).thenReturn(true);
 
-        boolean result = rateLimitService.tryConsume(request);
+        boolean result = rateLimitService.tryConsume(
+                request,
+                "username-availability",
+                20,
+                Duration.ofMinutes(1)
+        );
+
         assertTrue(result);
     }
 
@@ -56,10 +66,20 @@ class RateLimitServiceImplTest {
         request.setRemoteAddr("10.0.0.1");
 
         when(proxyManager.builder()).thenReturn(bucketBuilder);
-        when(bucketBuilder.build(any(byte[].class), any(Supplier.class))).thenReturn(bucket);
+        when(bucketBuilder.build(
+                any(byte[].class),
+                any(Supplier.class)
+        )).thenReturn(bucket);
+
         when(bucket.tryConsume(1)).thenReturn(false);
 
-        boolean result = rateLimitService.tryConsume(request);
+        boolean result = rateLimitService.tryConsume(
+                request,
+                "username-availability",
+                20,
+                Duration.ofMinutes(1)
+        );
+
         assertFalse(result);
     }
 }

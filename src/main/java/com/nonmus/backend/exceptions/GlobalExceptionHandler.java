@@ -126,6 +126,34 @@ public class GlobalExceptionHandler {
         return buildSimpleResponse(HttpStatus.TOO_MANY_REQUESTS, "RATE_LIMIT_EXCEEDED", exception.getMessage());
     }
 
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<ApiErrorResponse> handleInvalidCredentialsException(
+            InvalidCredentialsException exception) {
+        log.warn("Invalid credentials: {}", exception.getMessage());
+        return buildSimpleResponse(HttpStatus.UNAUTHORIZED, "INVALID_CREDENTIALS", exception.getMessage());
+    }
+
+    @ExceptionHandler(AccountLockedException.class)
+    public ResponseEntity<ApiErrorResponse> handleAccountLockedException(
+            AccountLockedException exception) {
+        log.warn("Account locked: {}", exception.getMessage());
+        ApiErrorResponse response = ApiErrorResponse.builder()
+                .status(HttpStatus.LOCKED.value())
+                .error("ACCOUNT_LOCKED")
+                .message(exception.getMessage())
+                .retryAfterSeconds(exception.getRetryAfterSeconds())
+                .timestamp(Instant.now())
+                .build();
+        return ResponseEntity.status(HttpStatus.LOCKED).body(response);
+    }
+
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<ApiErrorResponse> handleUserNotFoundException(
+            UserNotFoundException exception) {
+        log.warn("User not found: {}", exception.getMessage());
+        return buildSimpleResponse(HttpStatus.UNAUTHORIZED, "USER_NOT_FOUND", exception.getMessage());
+    }
+
     @ExceptionHandler(InvalidPasswordException.class)
     public ResponseEntity<ApiErrorResponse> handleInvalidPasswordException(
             InvalidPasswordException exception) {

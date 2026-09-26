@@ -17,13 +17,13 @@ public class RateLimitServiceImpl implements RateLimitService {
     private final ProxyManager<byte[]> proxyManager;
 
     @Override
-    public boolean tryConsume(HttpServletRequest request) {
+    public boolean tryConsume(HttpServletRequest request, String bucketName, long capacity, Duration refillPeriod) {
         String clientIp = extractClientIp(request);
-        String bucketKeyStr = "rate_limit_username_avail_" + clientIp;
+        String bucketKeyStr = "rate_limit_" + bucketName + "_" + clientIp;
         byte[] bucketKey = bucketKeyStr.getBytes(StandardCharsets.UTF_8);
 
         Supplier<BucketConfiguration> configSupplier = () -> BucketConfiguration.builder()
-                .addLimit(limit -> limit.capacity(20).refillGreedy(20, Duration.ofMinutes(1)))
+                .addLimit(limit -> limit.capacity(capacity).refillGreedy(capacity, refillPeriod))
                 .build();
 
         return proxyManager.builder().build(bucketKey, configSupplier).tryConsume(1);

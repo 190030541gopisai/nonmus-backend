@@ -8,6 +8,8 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -15,6 +17,24 @@ public class UserService {
 
     private final UserRepository userRepository;
 
+    @Transactional(readOnly = true)
+    public Optional<User> findByEmailOrUsername(String credential) {
+        if (credential == null || credential.isBlank()) {
+            return Optional.empty();
+        }
+        String target = credential.trim();
+        if (target.contains("@")) {
+            return userRepository.findByEmailIgnoreCase(target);
+        }
+        return userRepository.findByUsernameIgnoreCase(target);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<User> findByEmail(String email) {
+        return userRepository.findByEmailIgnoreCase(email);
+    }
+
+    
     @Transactional(readOnly = true)
     public boolean emailExists(String email) {
         log.debug("Checking if email exists: {}", email);
