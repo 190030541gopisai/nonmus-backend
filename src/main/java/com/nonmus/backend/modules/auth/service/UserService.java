@@ -46,6 +46,14 @@ public class UserService {
         return userRepository.save(user);
     }
 
+    @Transactional
+    public User updateUser(User user) {
+        if (userRepository.existsById(user.getId())) {
+            return userRepository.save(user);
+        }
+        return user;
+    }
+
     @Cacheable(value = "usernameAvailability", condition = "#username != null", key = "#username.trim().toLowerCase()")
     @Transactional(readOnly = true)
     public boolean isUsernameAvailable(String username) {

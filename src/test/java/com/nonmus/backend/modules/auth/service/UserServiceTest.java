@@ -1,5 +1,6 @@
 package com.nonmus.backend.modules.auth.service;
 
+import com.nonmus.backend.modules.auth.entity.User;
 import com.nonmus.backend.modules.auth.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -12,6 +13,7 @@ import org.springframework.cache.concurrent.ConcurrentMapCache;
 import org.springframework.cache.support.SimpleCacheManager;
 
 import java.util.List;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
@@ -33,6 +35,16 @@ class UserServiceTest {
         this.cacheManager = cacheManager;
 
         userService = new UserService(userRepository);
+    }
+
+    @Test
+    void updateUser_doesNotSave_whenUserDoesNotExist() {
+        User user = User.builder().id(UUID.randomUUID()).build();
+        when(userRepository.existsById(user.getId())).thenReturn(false);
+
+        userService.updateUser(user);
+
+        verify(userRepository, never()).save(user);
     }
 
     @Test
