@@ -1,6 +1,7 @@
 package com.nonmus.backend.modules.auth.service;
 
 import com.nonmus.backend.exceptions.UserAlreadyExistsException;
+import com.nonmus.backend.exceptions.UserNotFoundException;
 import com.nonmus.backend.modules.auth.dto.internal.EmailVerificationToken;
 import com.nonmus.backend.modules.auth.dto.internal.ResendState;
 import com.nonmus.backend.modules.auth.dto.internal.VerificationCodeResult;
@@ -45,6 +46,52 @@ public class AuthEmailService {
         return VerificationCodeResult.builder()
                 .codeExpiryInSeconds(verificationCodeState.getExpiryInSeconds())
                 .resendInSeconds(resendState.getCooldown())
+                .build();
+    }
+
+    public VerificationCodeResult sendForgotPasswordCode(String originalEmail) {
+        String email = originalEmail.toLowerCase();
+        log.info("Processing forgot-password verification code request for email: {}", email);
+
+        if (!userService.emailExists(email)) {
+            log.warn("Forgot-password requested for non-existent email: {}", email);
+            throw new UserNotFoundException("No account found with this email");
+        }
+
+        ResendState resendState = resendRateLimitService.recordResend(email);
+        VerificationCodeState verificationCodeState = emailVerificationCodeService.createVerificationCode(email);
+
+        VerificationCodeEvent event = VerificationCodeEvent.builder()
+                .email(email)
+                .code(verificationCodeState.getCode())
+                .build();
+
+        eventPublisher.publish(event);
+        log.info("Forgot-password verification code event published for email: {}", email);
+
+        return VerificationCodeResult.builder()
+                .codeExpiryInSeconds(verificationCodeState.getExpiryInSeconds())
+                .resendInSeconds(resendState.getCooldown())
+                .build();
+    }
+
+    public VerifyResult verifyForgotPassword(String originalEmail, String code) {
+        String email = originalEmail.toLowerCase();
+        log.info("Processing forgot-password verification for email: {}", email);
+
+        if (!userService.emailExists(email)) {
+            log.warn("Forgot-password verify for non-existent email: {}", email);
+            throw new UserNotFoundException("No account found with this email");
+        }
+
+        emailVerificationCodeService.verify(email, code);
+
+        EmailVerificationToken token = emailVerificationTokenService.createToken(email);
+        log.info("Forgot-password email verified and token generated for email: {}", email);
+
+        return VerifyResult.builder()
+                .verified(true)
+                .verificationToken(token.getToken())
                 .build();
     }
 

@@ -1,6 +1,7 @@
 package com.nonmus.backend.modules.auth.service;
 
 import com.nonmus.backend.exceptions.UserAlreadyExistsException;
+import com.nonmus.backend.exceptions.UserNotFoundException;
 import com.nonmus.backend.modules.auth.dto.internal.EmailVerificationToken;
 import com.nonmus.backend.modules.auth.dto.internal.ResendState;
 import com.nonmus.backend.modules.auth.dto.internal.VerificationCodeResult;
@@ -111,6 +112,74 @@ class AuthEmailServiceTest {
         );
 
         VerifyResult result = authEmailService.verify(email, code);
+
+        assertThat(result).isNotNull();
+        assertThat(result.isVerified()).isTrue();
+        assertThat(result.getVerificationToken()).isEqualTo(generatedToken);
+
+        verify(emailVerificationCodeService).verify(email, code);
+        verify(emailVerificationTokenService).createToken(email);
+    }
+
+    @Test
+    void sendForgotPasswordCode_WhenUserDoesNotExist_ThrowsUserNotFoundException() {
+        String email = "nonexistent@example.com";
+        when(userService.emailExists(email)).thenReturn(false);
+
+        assertThatThrownBy(() -> authEmailService.sendForgotPasswordCode(email))
+                .isInstanceOf(UserNotFoundException.class)
+                .hasMessageContaining("No account found with this email");
+
+        verify(resendRateLimitService, never()).recordResend(any());
+        verify(emailVerificationCodeService, never()).createVerificationCode(any());
+        verify(eventPublisher, never()).publish(any());
+    }
+
+    @Test
+    void sendForgotPasswordCode_WhenUserExists_SendsCodeAndReturnsResult() {
+        String email = "existing@example.com";
+        when(userService.emailExists(email)).thenReturn(true);
+        when(resendRateLimitService.recordResend(email)).thenReturn(
+                ResendState.builder().cooldown(60).build()
+        );
+        when(emailVerificationCodeService.createVerificationCode(email)).thenReturn(
+                VerificationCodeState.builder().code("654321").expiryInSeconds(600).build()
+        );
+
+        VerificationCodeResult result = authEmailService.sendForgotPasswordCode(email);
+
+        assertThat(result).isNotNull();
+        assertThat(result.getCodeExpiryInSeconds()).isEqualTo(600);
+        assertThat(result.getResendInSeconds()).isEqualTo(60);
+        verify(eventPublisher).publish(any(VerificationCodeEvent.class));
+    }
+
+    @Test
+    void verifyForgotPassword_WhenUserDoesNotExist_ThrowsUserNotFoundException() {
+        String email = "nonexistent@example.com";
+        String code = "123456";
+        when(userService.emailExists(email)).thenReturn(false);
+
+        assertThatThrownBy(() -> authEmailService.verifyForgotPassword(email, code))
+                .isInstanceOf(UserNotFoundException.class)
+                .hasMessageContaining("No account found with this email");
+
+        verify(emailVerificationCodeService, never()).verify(any(), any());
+        verify(emailVerificationTokenService, never()).createToken(any());
+    }
+
+    @Test
+    void verifyForgotPassword_WhenUserExistsAndCodeValid_ReturnsVerifyResultWithToken() {
+        String email = "existing@example.com";
+        String code = "123456";
+        String generatedToken = "550e8400-e29b-41d4-a716-446655440000";
+
+        when(userService.emailExists(email)).thenReturn(true);
+        when(emailVerificationTokenService.createToken(email)).thenReturn(
+                EmailVerificationToken.builder().email(email).token(generatedToken).build()
+        );
+
+        VerifyResult result = authEmailService.verifyForgotPassword(email, code);
 
         assertThat(result).isNotNull();
         assertThat(result.isVerified()).isTrue();
